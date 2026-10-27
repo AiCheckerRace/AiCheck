@@ -96,6 +96,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--cpu); outli
 .logo.loading { visibility: hidden; min-height: 1.05em; }
 .logo-img { display: block; width: auto; height: auto; max-width: 100%; max-height: min(34vh, 220px); }
 .lead { margin: 0; font-size: 15.5px; max-width: 30em; }
+.howto-text { display: grid; gap: 18px; }
+.howto { display: block; width: 100%; margin: 0; padding: 0; border: 0; background: none; text-align: left; cursor: zoom-in; }
+.howto img { display: block; width: auto; height: auto; max-width: 100%; max-height: 46vh; border-radius: 12px; }
+.howto.loading { visibility: hidden; min-height: 120px; }
 .rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .rules li { display: grid; grid-template-columns: 6.2em 1fr; align-items: center; gap: 10px; font-size: 14.5px; }
 .rules b { display: inline-block; text-align: center; padding: 3px 0; border-radius: 999px; font-size: 12.5px; font-weight: 800; color: var(--btn-fg); }
@@ -272,18 +276,22 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--cpu); outli
     <div class="title-body pad">
       <p class="eyebrow">AI IMAGE CHECK RACE</p>
       <h1 class="logo" id="logo"><span class="ai">AI</span>判別レース</h1>
-      <p class="lead">出てくる画像は AI が作った？ それとも人？<br>素早く見抜いて、CPUとのレースに勝とう。</p>
-      <ul class="rules">
-        <li><b class="r-ok">正解</b>答えが速いほど大きく加速</li>
-        <li><b class="r-ng">不正解</b>加速なし</li>
-        <li><b class="r-slip">時間切れ</b>スリップして減速</li>
-      </ul>
+      
+      <div class="howto-text" id="howtoText">
+        <p class="lead">出てくる画像は AI が作った？ それとも人？<br>素早く見抜いて、CPUとのレースに勝とう。</p>
+        <ul class="rules">
+          <li><b class="r-ok">正解</b>答えが速いほど大きく加速</li>
+          <li><b class="r-ng">不正解</b>加速なし</li>
+          <li><b class="r-slip">時間切れ</b>スリップして減速</li>
+        </ul>
+      </div>
+      <button type="button" class="howto" id="howto" aria-label="遊び方（タップで拡大）" hidden></button>
       <p class="meta" id="metaLine">全10問 ・ 1問5秒</p>
     </div>
     <div class="cta-bar">
       <button id="btnStart" class="cta" type="button">はじめる</button>
       <button id="btnPrev" class="cta ghost" type="button" hidden>前回の結果を見る</button>
-      <button id="btnLook" class="cta ghost" type="button" hidden>ロゴ・車・コースの見た目を試す</button>
+      <button id="btnLook" class="cta ghost" type="button" hidden>ロゴ・遊び方・車・コースの見た目を試す</button>
       <p id="titleNote" class="note"></p>
     </div>
   </section>
@@ -389,6 +397,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--cpu); outli
           <label class="pick">画像を選ぶ<input type="file" accept="image/*" id="file-logo"></label>
           <button class="lk-reset" type="button" id="logoReset" disabled>標準に戻す</button>
         </div>
+        <div class="look-row">
+          <div class="lr-main"><b>遊び方の画像</b><small id="lk-howto">文字の説明</small></div>
+          <label class="pick">画像を選ぶ<input type="file" accept="image/*" id="file-howto"></label>
+          <button class="lk-reset" type="button" id="howtoReset" disabled>標準に戻す</button>
+        </div>
+        <p class="look-guide"><b>遊び方の画像</b>：タイトル画面の遊び方の説明（文字と「正解・不正解・時間切れ」の一覧）の代わりに表示されます。タップで拡大できます。縦長すぎると「はじめる」ボタンが下に押し出されるので、横長〜正方形くらいがおすすめ。</p>
         <p class="look-guide"><b>タイトルロゴ</b>：タイトル画面のゲーム名の代わりに表示されます。背景を透明にしたPNGがおすすめ。下の「タイトル画面で確認」で見られます。</p>
         <p class="look-guide"><b>車</b>：後ろから見た車の絵を、背景を透明にしたPNGで。画像の下端がタイヤの接地面になります。</p>
         <p class="look-guide"><b>コース</b>：真上から見たコースの絵。道は画像の中央に置き、上端と下端がつながる絵にすると継ぎ目が出ません。車は道を左右に2等分した各レーンの中央を走ります。</p>
@@ -426,7 +440,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--cpu); outli
   
   
   
-  var API_URL = 'https://script.google.com/macros/s/AKfycbyVnzA4PCoKUDtpMVVG8kLILwX5b35Qt5hau87nylZD9VbOlI8OGDW_53w26hMKQAYtJw/exec';
+  var API_URL = 'https://script.google.com/macros/s/AKfycbwXcIidUPfmryApY13mW-17EXJB6sTaCcb5Ykl7D0O53BVZE-kWmxo_urUb0Q9p7yt2uQ/exec';
 
   var GAS = !!(window.google && google.script && google.script.run);
 
@@ -697,6 +711,44 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--cpu); outli
     img.src = src;
   }
   renderLogo();
+
+  
+  var HOWTO_SRC = (LIVE && BOOT.howto) || '';
+  var howtoOverride = '';   
+  var howtoReq = 0;
+  function howtoText() {
+    var box = $('howto');
+    box.hidden = true; box.innerHTML = ''; box.classList.remove('loading'); box.removeAttribute('data-src');
+    $('howtoText').hidden = false;
+  }
+  function renderHowto() {
+    var src = howtoOverride || HOWTO_SRC, req = ++howtoReq, box = $('howto');
+    if (!src) { howtoText(); return; }
+    $('howtoText').hidden = true; box.hidden = false; box.classList.add('loading');
+    var img = new Image(), retried = false;
+    img.referrerPolicy = 'no-referrer';
+    img.alt = '遊び方';
+    var giveUp = setTimeout(function () { if (req === howtoReq) howtoText(); }, 8000);
+    img.onload = function () {
+      clearTimeout(giveUp);
+      if (req !== howtoReq) return;
+      box.innerHTML = ''; box.appendChild(img); box.classList.remove('loading');
+      box.setAttribute('data-src', img.src);
+    };
+    img.onerror = function () {
+      var f = !retried && driveFallback(src);
+      if (f) { retried = true; img.src = f; return; }
+      clearTimeout(giveUp);
+      if (req === howtoReq) howtoText();
+    };
+    img.src = src;
+  }
+  
+  $('howto').addEventListener('click', function () {
+    var s = $('howto').getAttribute('data-src'); if (!s) return;
+    $('lbImg').src = s; $('lightbox').hidden = false;
+  });
+  renderHowto();
   if (darkMq && darkMq.addEventListener) darkMq.addEventListener('change', function () { if (LOGO_SRC.dark) renderLogo(); });
   new MutationObserver(function () { if (LOGO_SRC.dark) renderLogo(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   $('metaLine').textContent = '全' + N + '問 ・ 1問' + CFG.timeLimit + '秒 ・ 約1分';
@@ -1204,6 +1256,27 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--cpu); outli
     if (logoOverride) URL.revokeObjectURL(logoOverride);
     logoOverride = ''; renderLogo();
     $('lk-logo').textContent = 'ゲーム名の文字'; $('logoReset').disabled = true;
+  });
+  
+  $('file-howto').addEventListener('change', function () {
+    var inp = $('file-howto'), file = inp.files && inp.files[0];
+    inp.value = '';
+    if (!file) return;
+    if (!/^image\//.test(file.type)) { $('lookNote').textContent = '画像ファイル（PNG・JPGなど）を選んでください'; return; }
+    var url = URL.createObjectURL(file), probe = new Image();
+    probe.onload = function () {
+      if (howtoOverride) URL.revokeObjectURL(howtoOverride);
+      howtoOverride = url; renderHowto();
+      $('lk-howto').textContent = file.name + '（' + probe.naturalWidth + '×' + probe.naturalHeight + '）';
+      $('howtoReset').disabled = false; $('lookNote').textContent = '';
+    };
+    probe.onerror = function () { URL.revokeObjectURL(url); $('lookNote').textContent = file.name + ' を読み込めませんでした。別の画像で試してください'; };
+    probe.src = url;
+  });
+  $('howtoReset').addEventListener('click', function () {
+    if (howtoOverride) URL.revokeObjectURL(howtoOverride);
+    howtoOverride = ''; renderHowto();
+    $('lk-howto').textContent = '文字の説明'; $('howtoReset').disabled = true;
   });
   if (!LIVE) $('btnLook').hidden = false;
 
