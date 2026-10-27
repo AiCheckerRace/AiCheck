@@ -151,7 +151,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--cpu); outli
 .q-score { font-size: 12.5px; color: var(--muted); font-weight: 700; }
 .q-score b { font-family: var(--f-num); color: var(--ok); font-size: 16px; }
 .q-frame { position: relative; flex: 1; min-height: 0; border-radius: 14px; background: var(--surface); overflow: hidden; border: 1px solid var(--line); }
-.q-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.q-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-touch-callout: none; }
+ 
+html, body, body * { touch-action: manipulation; }
+#scrGame, #scrGame * { -webkit-touch-callout: none; }
 .q-wait, .q-fb {
   position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
   font-family: var(--f-display); font-size: 30px; letter-spacing: .06em;
@@ -440,9 +443,45 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--cpu); outli
   
   
   
-  var API_URL = 'https://script.google.com/macros/s/AKfycbwXcIidUPfmryApY13mW-17EXJB6sTaCcb5Ykl7D0O53BVZE-kWmxo_urUb0Q9p7yt2uQ/exec';
+  var API_URL = 'https://script.google.com/macros/s/AKfycbzXwUaeLwiooCKwA109JBNviQaE-CKndjq1l_uqrIOzan77W--2_lodF8p3PUYRPaerww/exec';
 
   var GAS = !!(window.google && google.script && google.script.run);
+
+  
+  
+  
+  
+  (function () {
+    var lastEnd = 0, sx = 0, sy = 0, moved = false;
+    document.addEventListener('touchstart', function (e) {
+      var t = e.touches[0]; if (!t) return;
+      sx = t.clientX; sy = t.clientY; moved = false;
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      var t = e.touches[0]; if (t && (Math.abs(t.clientX - sx) > 10 || Math.abs(t.clientY - sy) > 10)) moved = true;
+    }, { passive: true });
+    var lx = -999, ly = -999;
+    document.addEventListener('touchend', function (e) {
+      var now = Date.now(), t = e.changedTouches && e.changedTouches[0];
+      var x = t ? t.clientX : 0, y = t ? t.clientY : 0;
+      var el = e.target && e.target.closest ? e.target : null;
+      var isField = el && el.closest('input, textarea, select, label.pick');
+      
+      var near = Math.abs(x - lx) < 45 && Math.abs(y - ly) < 45;
+      if (!moved && !isField && near && now - lastEnd < 350) e.preventDefault();
+      lastEnd = now; lx = x; ly = y;
+    }, { passive: false });
+    
+    ['gesturestart', 'gesturechange'].forEach(function (ev) {
+      document.addEventListener(ev, function (e) {
+        var g = document.getElementById('scrGame');
+        if (g && !g.hidden) e.preventDefault();
+      }, { passive: false });
+    });
+    document.addEventListener('dblclick', function (e) {
+      if (!(e.target.closest && e.target.closest('input, textarea'))) e.preventDefault();
+    }, { passive: false });
+  })();
 
   
   function callServer(fn, arg) {
