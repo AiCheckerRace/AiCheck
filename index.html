@@ -1,0 +1,1497 @@
+<title>AI判別レース</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela&#43;Gothic&#43;One&amp;family=M&#43;PLUS&#43;Rounded&#43;1c:wght@400;700;800&amp;family=Chivo&#43;Mono:wght@500;700&amp;display=swap">
+<style>
+ 
+:root {
+  --paper: #EEF1F5;
+  --surface: #FFFFFF;
+  --ink: #141B27;
+  --muted: #5D6777;
+  --line: #D6DCE5;
+  --me: #FF4B2B;
+  --cpu: #2D6BFF;
+  --ok: #10995A;
+  --ng: #E0353B;
+  --err: #C2181F;
+  --btn: #141B27;
+  --btn-fg: #FFFFFF;
+  --grass-a: #BCDCC2;
+  --grass-b: #AFD3B6;
+  --road: #596273;
+  --road-line: #F4F6FA;
+  --curb: #E46A5A;
+  --tire: #1A1F29;
+  --speed-rgb: 20, 27, 39;
+  --scrim: rgba(14, 19, 27, 0.82);
+  --f-display: "Dela Gothic One", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --f-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --f-num: "Chivo Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E131B; --surface: #18202C; --ink: #E8ECF2; --muted: #9AA4B4; --line: #2A3444;
+    --me: #FF5B3D; --cpu: #4C82FF; --ok: #2FC27E; --ng: #FF5A5F; --err: #FF7A7E;
+    --btn: #E8ECF2; --btn-fg: #0E131B;
+    --grass-a: #1F3528; --grass-b: #1A2F23; --road: #394151; --road-line: #C9D1DC; --curb: #B55447; --tire: #0A0D12;
+    --speed-rgb: 232, 236, 242; --scrim: rgba(4, 6, 10, 0.86);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E131B; --surface: #18202C; --ink: #E8ECF2; --muted: #9AA4B4; --line: #2A3444;
+  --me: #FF5B3D; --cpu: #4C82FF; --ok: #2FC27E; --ng: #FF5A5F; --err: #FF7A7E;
+  --btn: #E8ECF2; --btn-fg: #0E131B;
+  --grass-a: #1F3528; --grass-b: #1A2F23; --road: #394151; --road-line: #C9D1DC; --curb: #B55447; --tire: #0A0D12;
+  --speed-rgb: 232, 236, 242; --scrim: rgba(4, 6, 10, 0.86);
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--f-body); font-size: 15px; line-height: 1.6;
+  overflow: hidden; overscroll-behavior: none; touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--cpu); outline-offset: 2px; }
+
+#app { position: relative; height: 100%; max-width: 480px; margin: 0 auto; }
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.pad { padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+
+.eyebrow { margin: 0; font-family: var(--f-num); font-size: 12px; font-weight: 700; letter-spacing: .14em; color: var(--muted); }
+.cta-bar { padding: 12px var(--gutter-r) calc(14px + env(safe-area-inset-bottom, 0px)) var(--gutter-l); display: grid; gap: 8px; }
+.cta {
+  height: 58px; border: 0; border-radius: 14px; background: var(--btn); color: var(--btn-fg);
+  font-family: var(--f-display); font-size: 19px; letter-spacing: .04em;
+  transition: transform .08s, opacity .2s;
+}
+.cta:active:not(:disabled) { transform: scale(.98); }
+.cta:disabled { opacity: .3; cursor: default; }
+.cta.ghost { background: transparent; color: var(--ink); border: 2px solid var(--line); font-family: var(--f-body); font-weight: 800; font-size: 16px; }
+.note { margin: 0; text-align: center; font-size: 12.5px; color: var(--muted); min-height: 1em; }
+
+ 
+.flagstrip {
+  height: 18px; flex: 0 0 auto;
+  background: repeating-conic-gradient(var(--ink) 0 25%, var(--paper) 0 50%) 0 0 / 18px 18px;
+  opacity: .9;
+}
+.title-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 18px; padding-block: 24px; overflow-y: auto; }
+.logo { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(44px, 14vw, 64px); line-height: 1.05; letter-spacing: .01em; text-wrap: balance; }
+.logo .ai { color: var(--me); }
+.logo.loading { visibility: hidden; min-height: 1.05em; }
+.logo-img { display: block; width: auto; height: auto; max-width: 100%; max-height: min(34vh, 220px); }
+.lead { margin: 0; font-size: 15.5px; max-width: 30em; }
+.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rules li { display: grid; grid-template-columns: 6.2em 1fr; align-items: center; gap: 10px; font-size: 14.5px; }
+.rules b { display: inline-block; text-align: center; padding: 3px 0; border-radius: 999px; font-size: 12.5px; font-weight: 800; color: var(--btn-fg); }
+.r-ok { background: var(--ok); } .r-ng { background: var(--muted); } .r-slip { background: var(--ng); }
+.meta { margin: 0; font-family: var(--f-num); font-size: 12.5px; color: var(--muted); letter-spacing: .04em; }
+
+ 
+.p-head { padding-block: 18px 6px; }
+.p-head h2 { margin: 4px 0 0; font-family: var(--f-display); font-weight: 400; font-size: 26px; }
+.p-head p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.form { flex: 1; overflow-y: auto; display: grid; align-content: start; gap: 18px; padding-block: 12px 8px; -webkit-user-select: text; user-select: text; }
+.field { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; min-width: 0; }
+.field > label, .field > legend, .field > .flabel { margin: 0; padding: 0; font-weight: 800; font-size: 15px; }
+.opt { margin-left: 8px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); font-size: 11px; font-weight: 700; color: var(--muted); vertical-align: 2px; }
+.field input.text {
+  width: 100%; min-width: 0; height: 50px; padding: 0 14px; border-radius: 12px; border: 2px solid var(--line);
+  background: var(--surface); color: var(--ink); font: inherit; font-size: 16px;
+}
+.field input.text:focus { border-color: var(--ink); outline: none; }
+.empty-survey { margin: 0; color: var(--muted); }
+.notice { margin: 0; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; line-height: 1.75; white-space: pre-line; }
+.row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.field input[type=number] {
+  width: 7.5em; min-width: 0; height: 50px; padding: 0 14px; border-radius: 12px; border: 2px solid var(--line);
+  background: var(--surface); color: var(--ink); font-family: var(--f-num); font-size: 20px;
+}
+.field input[type=number]:focus { border-color: var(--ink); outline: none; }
+.unit { font-weight: 700; color: var(--muted); }
+.hint { margin: -2px 0 0; font-size: 12px; color: var(--muted); }
+.range-err { margin: -2px 0 0; font-size: 13px; font-weight: 800; color: var(--err); }
+.field input.bad, .field input.bad:focus { border-color: var(--err); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  height: 44px; padding: 0 16px; border-radius: 999px; border: 2px solid var(--line); background: var(--surface);
+  font-weight: 700; font-size: 14.5px;
+}
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.passion { display: flex; align-items: center; gap: 14px; }
+.passion input { flex: 1; min-width: 0; accent-color: var(--me); height: 32px; }
+.passion.untouched input { opacity: .45; }
+.passion output { width: 4.2em; text-align: right; font-family: var(--f-num); font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; }
+
+ 
+.q-area { flex: 0 0 41%; display: flex; flex-direction: column; padding: 10px var(--gutter-r) 8px var(--gutter-l); min-height: 0; }
+.q-head { display: flex; align-items: baseline; gap: 10px; padding-bottom: 6px; }
+.q-no { font-family: var(--f-num); font-weight: 700; font-size: 13px; color: var(--muted); }
+.q-no b { font-size: 22px; color: var(--ink); }
+.q-ask { flex: 1; font-weight: 800; font-size: 14px; }
+.q-score { font-size: 12.5px; color: var(--muted); font-weight: 700; }
+.q-score b { font-family: var(--f-num); color: var(--ok); font-size: 16px; }
+.q-frame { position: relative; flex: 1; min-height: 0; border-radius: 14px; background: var(--surface); overflow: hidden; border: 1px solid var(--line); }
+.q-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.q-wait, .q-fb {
+  position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+  font-family: var(--f-display); font-size: 30px; letter-spacing: .06em;
+}
+.q-wait { color: var(--muted); }
+.q-broken { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 13px; }
+.q-fb span {
+  display: grid; place-items: center; width: 132px; height: 132px; border-radius: 50%;
+  color: #fff; font-size: 54px; line-height: 1; animation: pop .45s cubic-bezier(.2,1.6,.4,1) both;
+}
+.q-fb small { display: block; font-family: var(--f-body); font-weight: 800; font-size: 14px; margin-top: 4px; letter-spacing: 0; }
+.q-fb .ok { background: var(--ok); }
+.q-fb .ng { background: var(--muted); }
+.q-fb .slip { background: var(--ng); font-size: 26px; }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: .94; } }
+.timer { height: 7px; margin-top: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.timer i { display: block; height: 100%; background: var(--ink); transform-origin: left center; }
+.timer.low i { background: var(--ng); }
+
+.race { position: relative; flex: 1 1 auto; min-height: 150px; overflow: hidden; }
+.race canvas { position: absolute; inset: 0; display: block; }
+.countdown {
+  position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
+  font-family: var(--f-display); font-size: 84px; color: var(--road-line);
+  text-shadow: 0 3px 0 rgba(0,0,0,.35);
+}
+.countdown span { animation: pop .5s cubic-bezier(.2,1.6,.4,1) both; }
+.countdown .goal { font-size: 60px; }
+
+.answers {
+  flex: 0 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 10px var(--gutter-r) calc(12px + env(safe-area-inset-bottom, 0px)) var(--gutter-l);
+}
+.ans {
+  height: clamp(72px, 12vh, 96px); border: 0; border-radius: 16px; background: var(--btn); color: var(--btn-fg);
+  display: grid; place-content: center; gap: 0; touch-action: manipulation; transition: transform .07s, opacity .15s;
+}
+.ans b { font-family: var(--f-display); font-weight: 400; font-size: 32px; line-height: 1.1; }
+.ans small { font-size: 12px; font-weight: 700; opacity: .7; }
+.ans:active:not(:disabled), .ans.hit { transform: scale(.95); }
+.ans:disabled { opacity: .28; cursor: default; }
+
+ 
+.res-scroll { flex: 1; overflow-y: auto; padding-block: 20px 8px; display: grid; align-content: start; gap: 18px; }
+.res-head { display: grid; gap: 2px; }
+.res-big { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 64px; line-height: 1.1; }
+.res-big.win { color: var(--me); }
+.res-big.lose { color: var(--cpu); }
+.res-head p { margin: 0; font-weight: 700; }
+.stats { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stats div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.stats dt { font-size: 11.5px; color: var(--muted); font-weight: 700; }
+.stats dd { margin: 0; font-family: var(--f-num); font-weight: 700; font-size: 21px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stats dd small { font-size: 12px; margin-left: 2px; color: var(--muted); }
+.send { margin: 0; font-size: 13px; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px dashed var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.send.ok { border-style: solid; border-color: var(--ok); }
+.send.err { border-style: solid; border-color: var(--ng); }
+.send button { flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 8px; border: 0; background: var(--btn); color: var(--btn-fg); font-weight: 800; font-size: 13px; }
+.sec { margin: 4px 0 -6px; font-size: 14px; font-weight: 800; }
+.review { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.review li {
+  display: grid; grid-template-columns: 58px 1fr auto; gap: 12px; align-items: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px 8px 8px;
+}
+.thumb { width: 58px; height: 58px; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--paper); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rv-main { min-width: 0; display: grid; gap: 1px; font-size: 13px; }
+.rv-main .qn { font-family: var(--f-num); font-weight: 700; color: var(--muted); font-size: 12px; }
+.rv-main .ln b { font-weight: 800; }
+.rv-side { text-align: right; display: grid; justify-items: end; gap: 2px; }
+.mark { font-family: var(--f-display); font-size: 22px; line-height: 1; }
+.mark.ok { color: var(--ok); } .mark.ng { color: var(--muted); } .mark.slip { color: var(--ng); font-family: var(--f-body); font-weight: 800; font-size: 12px; }
+.rv-side .t { font-family: var(--f-num); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.thanks { margin: 6px 0 0; text-align: center; color: var(--muted); font-size: 13px; }
+
+ 
+.msg { flex: 1; display: grid; align-content: center; gap: 14px; padding-block: 24px; }
+.msg h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 30px; text-wrap: balance; }
+.msg p { margin: 0; }
+
+ 
+.look-scroll { flex: 1; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 14px; padding-bottom: 8px; }
+.look-preview { position: relative; height: 240px; overflow: hidden; }
+.look-preview canvas { position: absolute; inset: 0; display: block; }
+.look-list { display: grid; gap: 10px; }
+.look-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 10px 10px 14px;
+}
+.lr-main { min-width: 0; display: grid; line-height: 1.4; }
+.lr-main b { font-weight: 800; font-size: 14px; }
+.lr-main small { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pick {
+  position: relative; height: 38px; padding: 0 12px; border-radius: 10px; background: var(--btn); color: var(--btn-fg);
+  font-weight: 800; font-size: 12.5px; display: inline-flex; align-items: center; cursor: pointer; white-space: nowrap;
+}
+.pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.pick:focus-within { outline: 3px solid var(--cpu); outline-offset: 2px; }
+.lk-reset { height: 38px; padding: 0 10px; border-radius: 10px; border: 2px solid var(--line); background: transparent; font-weight: 700; font-size: 12px; white-space: nowrap; }
+.lk-reset:disabled { opacity: .35; cursor: default; }
+.look-road { padding: 2px 2px 0; }
+.look-road label { font-size: 13px; }
+.look-road output { font-size: 18px; }
+.look-road.off { opacity: .45; }
+.look-guide { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.65; }
+.look-guide b { color: var(--ink); }
+
+#fxCv { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+.lightbox { position: fixed; inset: 0; z-index: 60; background: var(--scrim); display: grid; place-items: center; padding: 24px var(--gutter-r) 24px var(--gutter-l); }
+.lightbox img { max-width: 100%; max-height: 80vh; border-radius: 10px; }
+.lightbox p { margin: 10px 0 0; color: #fff; font-size: 12px; text-align: center; opacity: .8; }
+
+@media (prefers-reduced-motion: reduce) {
+  .q-fb span, .countdown span { animation: none; }
+}
+</style>
+
+<div id="app">
+  
+  <section class="screen" id="scrTitle">
+    <div class="flagstrip" aria-hidden="true"></div>
+    <div class="title-body pad">
+      <p class="eyebrow">AI IMAGE CHECK RACE</p>
+      <h1 class="logo" id="logo"><span class="ai">AI</span>判別レース</h1>
+      <p class="lead">出てくる画像は AI が作った？ それとも人？<br>素早く見抜いて、CPUとのレースに勝とう。</p>
+      <ul class="rules">
+        <li><b class="r-ok">正解</b>答えが速いほど大きく加速</li>
+        <li><b class="r-ng">不正解</b>加速なし</li>
+        <li><b class="r-slip">時間切れ</b>スリップして減速</li>
+      </ul>
+      <p class="meta" id="metaLine">全10問 ・ 1問5秒</p>
+    </div>
+    <div class="cta-bar">
+      <button id="btnStart" class="cta" type="button">はじめる</button>
+      <button id="btnPrev" class="cta ghost" type="button" hidden>前回の結果を見る</button>
+      <button id="btnLook" class="cta ghost" type="button" hidden>ロゴ・車・コースの見た目を試す</button>
+      <p id="titleNote" class="note"></p>
+    </div>
+  </section>
+
+  
+  <section class="screen" id="scrProfile" hidden>
+    <div class="p-head pad">
+      <p class="eyebrow">PLAYER</p>
+      <h2 id="pTitle">プレイヤー情報</h2>
+      <p id="pNote">アンケートにご協力ください</p>
+    </div>
+    
+    <form id="profileForm" class="form pad" novalidate></form>
+    <div class="cta-bar">
+      <button id="btnNext" class="cta" type="button" disabled>次へ進む</button>
+      <p id="profileNote" class="note"></p>
+    </div>
+  </section>
+
+  
+  <section class="screen" id="scrGame" hidden>
+    <div class="q-area">
+      <div class="q-head">
+        <span class="q-no">Q<b id="qNo">1</b>/<span id="qTotal">10</span></span>
+        <span class="q-ask">これは AI が作った？</span>
+        <span class="q-score">正解 <b id="qScore">0</b></span>
+      </div>
+      <div class="q-frame">
+        <img id="qImg" alt="お題の画像" referrerpolicy="no-referrer" hidden>
+        <div id="qBroken" class="q-broken" hidden>画像を読み込めませんでした</div>
+        <div id="qWait" class="q-wait">READY</div>
+        <div id="qFb" class="q-fb" hidden></div>
+      </div>
+      <div class="timer" id="timer"><i id="timerBar"></i></div>
+    </div>
+    <div class="race" id="raceBox">
+      <canvas id="raceCv"></canvas>
+      <div id="countdown" class="countdown" hidden></div>
+    </div>
+    <div class="answers">
+      <button class="ans" id="btnAI" type="button" data-a="AI" disabled><b>AI</b><small>AIが生成</small></button>
+      <button class="ans" id="btnHU" type="button" data-a="HUMAN" disabled><b>人間</b><small>人が制作</small></button>
+    </div>
+  </section>
+
+  
+  <section class="screen" id="scrResult" hidden>
+    <div class="res-scroll pad">
+      <div class="res-head">
+        <p class="eyebrow">RESULT</p>
+        <h2 class="res-big" id="resBig">WIN!</h2>
+        <p id="resSub"></p>
+      </div>
+      <dl class="stats">
+        <div><dt>クリアタイム</dt><dd id="stTime">--</dd></div>
+        <div><dt>正解数</dt><dd id="stOk">--</dd></div>
+        <div><dt>平均回答</dt><dd id="stAvg">--</dd></div>
+      </dl>
+      <p id="sendStatus" class="send" hidden></p>
+      <h3 class="sec">答え合わせ</h3>
+      <ol class="review" id="review"></ol>
+      <p class="thanks">ご参加ありがとうございました！</p>
+    </div>
+    <div class="cta-bar" id="resActions" hidden>
+      <button id="btnRetry" class="cta" type="button">もう一度あそぶ</button>
+    </div>
+  </section>
+
+  
+  <section class="screen" id="scrLook" hidden>
+    <div class="p-head pad">
+      <p class="eyebrow">CUSTOMIZE</p>
+      <h2>見た目を試す</h2>
+      <p>画像を選ぶと、すぐに反映されます</p>
+    </div>
+    <div class="look-scroll">
+      <div class="look-preview" id="lookBox"><canvas id="lookCv"></canvas></div>
+      <div class="look-list pad">
+        <div class="look-row">
+          <div class="lr-main"><b>自分の車（右レーン）</b><small id="lk-me">標準の車</small></div>
+          <label class="pick">画像を選ぶ<input type="file" accept="image/*" id="file-me" data-slot="me"></label>
+          <button class="lk-reset" type="button" data-slot="me" disabled>標準に戻す</button>
+        </div>
+        <div class="look-row">
+          <div class="lr-main"><b>CPUの車（左レーン）</b><small id="lk-cpu">標準の車</small></div>
+          <label class="pick">画像を選ぶ<input type="file" accept="image/*" id="file-cpu" data-slot="cpu"></label>
+          <button class="lk-reset" type="button" data-slot="cpu" disabled>標準に戻す</button>
+        </div>
+        <div class="look-row">
+          <div class="lr-main"><b>コース</b><small id="lk-course">標準のコース</small></div>
+          <label class="pick">画像を選ぶ<input type="file" accept="image/*" id="file-course" data-slot="course"></label>
+          <button class="lk-reset" type="button" data-slot="course" disabled>標準に戻す</button>
+        </div>
+        <div class="field look-road" id="roadBox">
+          <label for="fRoad">コース画像の道幅（画像の横幅に対する割合）</label>
+          <div class="passion">
+            <input id="fRoad" type="range" min="30" max="90" step="1" value="60" disabled>
+            <output id="oRoad" for="fRoad">60%</output>
+          </div>
+        </div>
+        <div class="look-row">
+          <div class="lr-main"><b>タイトルロゴ</b><small id="lk-logo">ゲーム名の文字</small></div>
+          <label class="pick">画像を選ぶ<input type="file" accept="image/*" id="file-logo"></label>
+          <button class="lk-reset" type="button" id="logoReset" disabled>標準に戻す</button>
+        </div>
+        <p class="look-guide"><b>タイトルロゴ</b>：タイトル画面のゲーム名の代わりに表示されます。背景を透明にしたPNGがおすすめ。下の「タイトル画面で確認」で見られます。</p>
+        <p class="look-guide"><b>車</b>：後ろから見た車の絵を、背景を透明にしたPNGで。画像の下端がタイヤの接地面になります。</p>
+        <p class="look-guide"><b>コース</b>：真上から見たコースの絵。道は画像の中央に置き、上端と下端がつながる絵にすると継ぎ目が出ません。車は道を左右に2等分した各レーンの中央を走ります。</p>
+        <p class="look-guide">ここで選んだ画像はこの画面を閉じると消えます。本番で使うには、スプレッドシートの「設定」シートに画像を登録してください。</p>
+        <p id="lookNote" class="note"></p>
+      </div>
+    </div>
+    <div class="cta-bar">
+      <button id="btnLookDone" class="cta" type="button">この見た目で遊ぶ</button>
+      <button id="btnLookTitle" class="cta ghost" type="button">タイトル画面で確認</button>
+    </div>
+  </section>
+
+  
+  <section class="screen" id="scrMsg" hidden>
+    <div class="flagstrip" aria-hidden="true"></div>
+    <div class="msg pad">
+      <p class="eyebrow" id="msgEyebrow">THANK YOU</p>
+      <h2 id="msgTitle">回答済みです</h2>
+      <p id="msgBody"></p>
+      <button id="msgBtn" class="cta ghost" type="button" hidden>前回の結果を見る</button>
+    </div>
+  </section>
+</div>
+
+<canvas id="fxCv" aria-hidden="true"></canvas>
+<div id="lightbox" class="lightbox" hidden><div><img id="lbImg" alt="拡大画像" referrerpolicy="no-referrer"><p>タップで閉じる</p></div></div>
+
+<script type="application/json" id="bootData"><?!= boot ?></script>
+<script>
+(function () {
+  'use strict';
+
+  
+  
+  
+  
+  var API_URL = 'https://script.google.com/macros/s/AKfycbyVnzA4PCoKUDtpMVVG8kLILwX5b35Qt5hau87nylZD9VbOlI8OGDW_53w26hMKQAYtJw/exec';
+
+  var GAS = !!(window.google && google.script && google.script.run);
+
+  
+  function callServer(fn, arg) {
+    return new Promise(function (resolve, reject) {
+      if (GAS) { google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](arg); return; }
+      fetch(apiBase(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: fn, payload: arg }) })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (j) { if (j && j.error) throw new Error(j.error); resolve(j ? j.result : null); })
+        .catch(reject);
+    });
+  }
+  
+  function apiBase() {
+    return String(API_URL).trim().replace(/[?#].*$/, '')
+      .replace(/\/a\/macros\/[^\/]+\//, '/macros/').replace(/\/u\/\d+\//, '/').replace(/\/dev$/, '/exec');
+  }
+
+  function embeddedBoot() {
+    try {
+      var t = document.getElementById('bootData').textContent.trim();
+      return t && t.charAt(0) === '{' ? JSON.parse(t) : null;
+    } catch (e) { return null; }
+  }
+  function showFatal(text) {
+    ['scrTitle', 'scrProfile', 'scrGame', 'scrResult', 'scrLook'].forEach(function (id) { document.getElementById(id).hidden = true; });
+    document.getElementById('scrMsg').hidden = false;
+    document.getElementById('msgEyebrow').textContent = 'NOTICE';
+    document.getElementById('msgTitle').textContent = 'ページを開けませんでした';
+    document.getElementById('msgBody').textContent = text;
+  }
+  function bootFromApi() {
+    var q = new URLSearchParams(location.search);
+    var url = apiBase() + '?api=boot&k=' + encodeURIComponent(q.get('k') || '') + '&t=' + encodeURIComponent(q.get('t') || '') +
+      (q.get('test') === '1' ? '&test=1' : '');
+    var btn = document.getElementById('btnStart');
+    btn.disabled = true; btn.textContent = '読み込み中…';
+    document.getElementById('logo').classList.add('loading');
+    fetch(url)
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) {
+        if (j && j.boot) main(j.boot);
+        else showFatal((j && j.error) || '読み込めませんでした。');
+      })
+      .catch(function () { showFatal('読み込めませんでした。電波の良い場所で、もう一度QRコードを読み取ってください。'); });
+  }
+
+  var EMBEDDED = embeddedBoot();
+  if (EMBEDDED) main(EMBEDDED);                 
+  else if (API_URL) bootFromApi();              
+  else main({ mode: 'demo' });                  
+
+  function main(BOOT) {
+  
+  var LIVE = BOOT.mode === 'live' && (GAS || !!API_URL);
+  var TEST = LIVE && BOOT.test === true;   
+  var CFG = Object.assign({ timeLimit: 5, cpuAccuracy: 0.6, onePlay: true }, BOOT.settings || {});
+  var GAME_ID = BOOT.gameId || 'demo';
+  var DONE_KEY = 'airace:done:' + GAME_ID + (BOOT.token ? ':' + BOOT.token : '');
+
+  
+  var BASE_V = 30;      
+  var TAU = 1.3;        
+  var BOOST_MIN = 8;    
+  var BOOST_MAX = 42;   
+  var SLIP = -24;       
+  var LEAD_SCALE = 55;  
+  var FEEDBACK_MS = 600;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  function uuid() {
+    try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+    });
+  }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.random() * (i + 1) | 0; var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var deviceId = store.get('airace:device');
+  if (!deviceId) { deviceId = uuid(); store.set('airace:device', deviceId); }
+
+  
+  var QS = LIVE ? (BOOT.questions || []) : makeDemoQuestions(10);
+  var N = QS.length;
+  var imagesReady = false;
+
+  var preloadTok = 0;
+  function preloadImages() {
+    var tok = ++preloadTok;   
+    imagesReady = false;
+    var loads = QS.map(function (q) {
+      return new Promise(function (res) {
+        var im = new Image();
+        im.referrerPolicy = 'no-referrer';
+        im.onload = function () { q.broken = false; res(); };
+        im.onerror = function () {
+          
+          var m = /lh3\.googleusercontent\.com\/d\/([\w-]+)/.exec(q.img);
+          if (m && !q._retried) { q._retried = true; q.img = 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1200'; im.src = q.img; return; }
+          q.broken = true; res();
+        };
+        im.src = q.img;
+        q._im = im;
+      });
+    });
+    var timeout = new Promise(function (res) { setTimeout(res, 12000); });
+    return Promise.race([Promise.all(loads.concat([loadVisuals()])), timeout]).then(function () { if (tok === preloadTok) { imagesReady = true; updateNext(); } });
+  }
+
+  
+  
+  var POOL = LIVE ? ((BOOT.pool && BOOT.pool.length) ? BOOT.pool : (BOOT.questions || [])) : null;
+  var played = false;       
+  var prevResult = null;    
+  var playCount = 0;        
+  var attempted = false;    
+  var unsent = null;        
+  var readyPromise = null;
+
+  function randomSet() {
+    if (!LIVE) return makeDemoQuestions(10);
+    var n = (BOOT.questions || []).length || 10;
+    return shuffle(POOL.map(function (q) { return { id: q.id, img: q.img, answer: q.answer }; })).slice(0, n);
+  }
+  function prepareSet(qs) { QS = qs; N = QS.length; readyPromise = preloadImages(); return readyPromise; }
+  function willRecord() {
+    if (!LIVE || TEST) return false;
+    if (!CFG.onePlay) return true;          
+    return !played && !attempted;
+  }
+
+  
+  
+  var VIS_SRC = BOOT.visuals || {};
+  var VIS = { me: null, cpu: null, course: null, roadFrac: clamp(Number(VIS_SRC.roadWidth) || 0.6, 0.2, 0.95) };
+  var visualsPromise = null;
+
+  function driveFallback(url) {
+    var m = /lh3\.googleusercontent\.com\/d\/([\w-]+)/.exec(url || '');
+    return m ? 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1200' : null;
+  }
+  
+  function loadSprite(src, maxW) {
+    return new Promise(function (res) {
+      if (!src) { res(null); return; }
+      var im = new Image(), retried = false;
+      im.referrerPolicy = 'no-referrer';
+      im.onload = function () {
+        if (!im.naturalWidth) { res(null); return; }
+        var sc = Math.min(1, maxW / im.naturalWidth);
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(im.naturalWidth * sc));
+        c.height = Math.max(1, Math.round(im.naturalHeight * sc));
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        res(c);
+      };
+      im.onerror = function () {
+        var f = !retried && driveFallback(src);
+        if (f) { retried = true; im.src = f; } else res(null);
+      };
+      im.src = src;
+    });
+  }
+  function loadVisuals() {
+    if (!visualsPromise) {
+      visualsPromise = Promise.all([
+        loadSprite(VIS_SRC.carMe, 480), loadSprite(VIS_SRC.carCpu, 480), loadSprite(VIS_SRC.course, 640)
+      ]).then(function (a) {
+        if (a[0]) VIS.me = a[0];
+        if (a[1]) VIS.cpu = a[1];
+        if (a[2]) VIS.course = a[2];
+      });
+    }
+    return visualsPromise;
+  }
+
+  
+  function makeDemoQuestions(n) {
+    var answers = [];
+    for (var i = 0; i < n; i++) answers.push(i % 2 ? 'AI' : 'HUMAN');
+    shuffle(answers);
+    var list = [];
+    for (var k = 0; k < n; k++) {
+      var c = document.createElement('canvas'); c.width = 640; c.height = 480;
+      var g = c.getContext('2d');
+      var hue = (k * 37 + Math.random() * 30) % 360;
+      var sky = g.createLinearGradient(0, 0, 0, 480);
+      sky.addColorStop(0, 'hsl(' + hue + ',55%,78%)'); sky.addColorStop(1, 'hsl(' + ((hue + 40) % 360) + ',60%,90%)');
+      g.fillStyle = sky; g.fillRect(0, 0, 640, 480);
+      g.fillStyle = 'hsl(' + ((hue + 180) % 360) + ',70%,62%)';
+      g.beginPath(); g.arc(120 + Math.random() * 400, 110 + Math.random() * 60, 44 + Math.random() * 20, 0, 7); g.fill();
+      for (var L = 0; L < 3; L++) {
+        g.fillStyle = 'hsl(' + ((hue + 120 + L * 15) % 360) + ',' + (35 + L * 10) + '%,' + (52 - L * 12) + '%)';
+        g.beginPath(); g.moveTo(0, 480);
+        var base = 250 + L * 70;
+        for (var x = 0; x <= 640; x += 32) g.lineTo(x, base - Math.sin(x / (90 + L * 30) + k + L) * (40 - L * 8) - Math.random() * 10);
+        g.lineTo(640, 480); g.closePath(); g.fill();
+      }
+      g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(16, 428, 190, 36);
+      g.fillStyle = '#fff'; g.font = 'bold 20px sans-serif'; g.fillText('サンプル画像 ' + (k + 1), 28, 453);
+      list.push({ id: 'DEMO' + (k + 1 < 10 ? '0' : '') + (k + 1), img: c.toDataURL('image/jpeg', 0.85), answer: answers[k] });
+    }
+    return list;
+  }
+
+  
+  var SCREENS = ['scrTitle', 'scrProfile', 'scrGame', 'scrResult', 'scrMsg', 'scrLook'];
+  var current = 'scrTitle';
+  function show(id) {
+    current = id;
+    SCREENS.forEach(function (s) { $(s).hidden = s !== id; });
+    if (id === 'scrGame') resizeAll();
+  }
+
+  
+  
+  var DEFAULT_TITLE = 'AI判別レース';
+  var GAME_TITLE = (LIVE && typeof BOOT.title === 'string' && BOOT.title.trim()) ? BOOT.title.trim() : DEFAULT_TITLE;
+  
+  function renderTitleText() {
+    var h = $('logo');
+    h.classList.remove('loading');
+    h.innerHTML = GAME_TITLE.split(/[｜|]/).map(function (line) {
+      return esc(line).replace(/AI|ＡＩ/g, '<span class="ai">$&</span>');
+    }).join('<br>');
+  }
+  document.title = GAME_TITLE.replace(/[｜|]/g, '');
+
+  
+  
+  var LOGO_SRC = { light: (LIVE && BOOT.logo) || '', dark: (LIVE && BOOT.logoDark) || '' };
+  var logoOverride = '';   
+  var darkMq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+  function prefersDark() {
+    var t = document.documentElement.getAttribute('data-theme');
+    return t ? t === 'dark' : !!(darkMq && darkMq.matches);
+  }
+  var logoReq = 0;
+  function renderLogo() {
+    var src = logoOverride || (prefersDark() && LOGO_SRC.dark) || LOGO_SRC.light;
+    var req = ++logoReq, h = $('logo');
+    if (!src) { renderTitleText(); return; }
+    h.classList.add('loading');
+    var img = new Image(), retried = false;
+    img.referrerPolicy = 'no-referrer';
+    img.className = 'logo-img';
+    img.alt = GAME_TITLE.replace(/[｜|]/g, '');
+    var giveUp = setTimeout(function () { if (req === logoReq) renderTitleText(); }, 8000);
+    img.onload = function () {
+      clearTimeout(giveUp);
+      if (req !== logoReq) return;
+      h.innerHTML = ''; h.appendChild(img); h.classList.remove('loading');
+    };
+    img.onerror = function () {
+      var f = !retried && driveFallback(src);
+      if (f) { retried = true; img.src = f; return; }
+      clearTimeout(giveUp);
+      if (req === logoReq) renderTitleText();
+    };
+    img.src = src;
+  }
+  renderLogo();
+  if (darkMq && darkMq.addEventListener) darkMq.addEventListener('change', function () { if (LOGO_SRC.dark) renderLogo(); });
+  new MutationObserver(function () { if (LOGO_SRC.dark) renderLogo(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  $('metaLine').textContent = '全' + N + '問 ・ 1問' + CFG.timeLimit + '秒 ・ 約1分';
+  if (!LIVE) $('titleNote').textContent = 'デモ版：サンプル画像で遊べます（結果は送信されません）';
+  if (TEST) $('titleNote').textContent = 'テストモード：結果は記録されません（確認用）';
+
+  
+  function setPlayed(prev) {
+    var first = !played;
+    played = true;
+    if (prev) prevResult = prev;
+    setPlayedUi();
+    if (first && playCount === 0) prepareSet(randomSet());
+  }
+
+  
+  function initTitle() {
+    var prevRaw = store.get(DONE_KEY), prev = null;
+    if (prevRaw) { try { prev = JSON.parse(prevRaw); } catch (e) { prev = null; } }
+    var known = LIVE && CFG.onePlay && (!!prevRaw || BOOT.played === true);
+    if (known) { played = true; prevResult = prev; setPlayedUi(); }
+    if (LIVE && CFG.onePlay && !known) {
+      var b = $('btnStart'); b.disabled = true; b.textContent = '確認中…';
+      var enable = function () { b.disabled = false; b.textContent = 'はじめる'; };
+      callServer('checkStatus', { key: BOOT.key || '', token: BOOT.token || '', gameId: GAME_ID, deviceId: deviceId })
+        .then(function (r) { enable(); if (r && r.played) setPlayed(null); }, enable);
+    }
+    return known ? randomSet() : QS;
+  }
+  function setPlayedUi() {
+    $('titleNote').textContent = 'ご参加ありがとうございました！ 何度でも遊べます（2回目以降は記録されず、問題はランダムに出ます）';
+    $('btnPrev').hidden = !prevResult;
+  }
+  $('btnStart').addEventListener('click', function () {
+    if (playCount === 0 && !played) { show('scrProfile'); return; }   
+    var b = $('btnStart');
+    if (!imagesReady) { b.disabled = true; b.textContent = '画像を読み込み中…'; }
+    readyPromise.then(function () { b.disabled = false; b.textContent = 'はじめる'; startGame(); });
+  });
+  $('btnPrev').addEventListener('click', function () {
+    if (!prevResult) return;
+    renderResult(prevResult, false); show('scrResult');
+  });
+
+  
+  
+  
+  
+  var DEFAULT_SURVEY = [
+    { key: '年齢', label: '年齢', type: 'number', min: 1, max: 120, unit: '歳' },
+    { key: '性別', label: '性別', type: 'choice', options: ['男性', '女性', 'その他', '回答しない'] },
+    { key: 'デザイン歴', label: 'イラスト・デザイン歴', type: 'period', hint: '未経験の方は 0 を入力し、単位はどちらでも構いません' },
+    { key: '熱意', label: 'このゲームへの熱意', type: 'slider', min: 0, max: 100, unit: '%' }
+  ];
+  var SURVEY = (LIVE && Array.isArray(BOOT.survey)) ? BOOT.survey : DEFAULT_SURVEY;
+  
+  var DEFAULT_NOTICE = '入力いただいた情報やプレイ記録は、卒業研究に使用する場合がございます。予めご了承ください。';
+  var NOTICE = (LIVE && typeof BOOT.surveyNotice === 'string') ? BOOT.surveyNotice.trim() : DEFAULT_NOTICE;
+  function noticeHtml() { return NOTICE ? '<p class="notice" role="note">' + esc(NOTICE) + '</p>' : ''; }
+  var sv = [];          
+  var profile = {};     
+  var profileValid = false;
+
+  function numOrNull(s) { s = String(s == null ? '' : s).trim(); return s === '' || !isFinite(Number(s)) ? null : Number(s); }
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
+
+  function renderSurvey() {
+    var form = $('profileForm');
+    if (LIVE && typeof BOOT.surveyTitle === 'string') $('pTitle').textContent = BOOT.surveyTitle;
+    if (LIVE && typeof BOOT.surveyNote === 'string') $('pNote').textContent = BOOT.surveyNote;
+    if (!SURVEY.length) {
+      $('pTitle').textContent = '準備はいい？';
+      $('pNote').textContent = '';
+      form.innerHTML = noticeHtml() + '<p class="empty-survey">ボタンを押すと、カウントダウンのあとレースが始まります。</p>';
+      return;
+    }
+    form.innerHTML = noticeHtml() + SURVEY.map(function (q, i) {
+      var id = 'sv' + i, label = esc(q.label || q.key) + (q.required === false ? '<span class="opt">任意</span>' : '');
+      var hint = q.hint || (q.type === 'slider' ? 'スライダーを動かして回答してください' : '');
+      var unit = q.unit ? '<span class="unit">' + esc(q.unit) + '</span>' : '';
+      var body;
+      if (q.type === 'choice') {
+        body = '<p class="flabel" id="' + id + 'L">' + label + '</p><div class="chips" role="group" aria-labelledby="' + id + 'L" data-i="' + i + '">' +
+          (q.options || []).map(function (o) { return '<button type="button" class="chip" data-v="' + esc(o) + '" aria-pressed="false">' + esc(o) + '</button>'; }).join('') + '</div>';
+      } else if (q.type === 'period') {
+        body = '<label for="' + id + '">' + label + '</label><div class="row">' +
+          '<input id="' + id + '" type="number" inputmode="decimal" min="0" step="any" placeholder="0" autocomplete="off">' +
+          '<div class="chips" role="group" aria-label="単位" data-i="' + i + '" data-sub="unit">' +
+          '<button type="button" class="chip" data-v="month" aria-pressed="true">ヶ月</button>' +
+          '<button type="button" class="chip" data-v="year" aria-pressed="false">年</button></div></div>' + errLine(id);
+      } else if (q.type === 'slider') {
+        var mn = isNum(q.min) ? q.min : 0, mx = isNum(q.max) ? q.max : 100;
+        body = '<label for="' + id + '">' + label + '</label><div class="passion untouched">' +
+          '<input id="' + id + '" type="range" min="' + mn + '" max="' + mx + '" step="' + (Number.isInteger(mn) && Number.isInteger(mx) ? 1 : 'any') + '" value="' + (Number.isInteger(mn) && Number.isInteger(mx) ? Math.round((mn + mx) / 2) : (mn + mx) / 2) + '">' +
+          '<output for="' + id + '">--' + esc(q.unit || '') + '</output></div>';
+      } else if (q.type === 'text') {
+        body = '<label for="' + id + '">' + label + '</label><input id="' + id + '" class="text" type="text" maxlength="200" autocomplete="off">';
+      } else {
+        var intOnly = (!isNum(q.min) || Number.isInteger(q.min)) && (!isNum(q.max) || Number.isInteger(q.max));
+        body = '<label for="' + id + '">' + label + '</label><div class="row"><input id="' + id + '" type="number" inputmode="' + (intOnly ? 'numeric' : 'decimal') + '"' +
+          (isNum(q.min) ? ' min="' + q.min + '"' : '') + (isNum(q.max) ? ' max="' + q.max + '"' : '') + ' step="any" autocomplete="off">' + unit + '</div>' + errLine(id);
+      }
+      return '<div class="field">' + body + (hint ? '<p class="hint">' + esc(hint) + '</p>' : '') + '</div>';
+    }).join('');
+    
+    SURVEY.forEach(function (q, i) { if (q.type === 'period') svState(i).unit = 'month'; });
+  }
+
+  
+  function errLine(id) { return '<p class="range-err" id="' + id + 'E" role="alert" hidden></p>'; }
+  function rangeText(q) {
+    if (q.type === 'period') return '0〜1200 の範囲で入力してください';
+    var u = esc(q.unit || '');
+    if (isNum(q.min) && isNum(q.max)) return q.min + '〜' + q.max + u + ' の範囲で入力してください';
+    if (isNum(q.min)) return q.min + u + '以上で入力してください';
+    if (isNum(q.max)) return q.max + u + '以下で入力してください';
+    return '数字で入力してください';
+  }
+  function showRangeErr(i, on) {
+    var el = $('sv' + i + 'E'), inp = $('sv' + i);
+    if (!el || !inp) return;
+    if (on) el.innerHTML = rangeText(SURVEY[i]);
+    el.hidden = !on;
+    inp.classList.toggle('bad', on);
+    inp.setAttribute('aria-invalid', on ? 'true' : 'false');
+  }
+
+  function svState(i) { return sv[i] || (sv[i] = {}); }
+  $('profileForm').addEventListener('click', function (e) {
+    var b = e.target.closest('.chip'); if (!b) return;
+    var group = b.closest('.chips'), i = +group.getAttribute('data-i');
+    Array.prototype.forEach.call(group.querySelectorAll('.chip'), function (c) { c.setAttribute('aria-pressed', String(c === b)); });
+    if (group.getAttribute('data-sub') === 'unit') svState(i).unit = b.getAttribute('data-v');
+    else svState(i).value = b.getAttribute('data-v');
+    validate();
+  });
+  function onSurveyInput(e) {
+    var t = e.target;
+    if (!t.id || t.id.indexOf('sv') !== 0) return;
+    var i = +t.id.slice(2), q = SURVEY[i]; if (!q) return;
+    var s = svState(i); s.value = t.value;
+    s.bad = !!(t.validity && t.validity.badInput);  
+    if (q.type === 'slider') {
+      s.touched = true;
+      t.parentNode.classList.remove('untouched');
+      var v = Math.round(Number(t.value) * 10) / 10;
+      t.nextElementSibling.textContent = v + (q.unit || '');
+    }
+    validate();
+  }
+  ['input', 'change', 'pointerup'].forEach(function (ev) { $('profileForm').addEventListener(ev, onSurveyInput); });
+  
+  $('profileForm').addEventListener('focusout', function (e) {
+    var t = e.target;
+    if (!t.id || !/^sv\d+$/.test(t.id) || t.type !== 'number') return;
+    svState(+t.id.slice(2)).left = true;
+    validate();
+  });
+  $('profileForm').addEventListener('submit', function (e) { e.preventDefault(); });
+
+  function validate() {
+    var missing = [], invalid = [];
+    profile = {};
+    SURVEY.forEach(function (q, i) {
+      var s = sv[i] || {}, raw = String(s.value == null ? '' : s.value).trim(), v = null;
+      if (q.type === 'choice') v = raw || null;
+      else if (q.type === 'text') v = raw || null;
+      else if (q.type === 'slider') v = s.touched ? Math.round(Number(raw) * 10) / 10 : null;
+      else if (q.type === 'period') {
+        var p = numOrNull(raw), badP = s.bad || (raw !== '' && (p === null || p < 0 || p > 1200));
+        if (!badP && p !== null && s.unit) v = { value: p, unit: s.unit };
+        if (badP) invalid.push(q.key);
+        showRangeErr(i, badP && (s.left || s.bad || p === null || p > 1200));
+      } else {   
+        var n = numOrNull(raw);
+        var tooBig = n !== null && isNum(q.max) && n > q.max;
+        var badN = s.bad || (raw !== '' && (n === null || tooBig || (isNum(q.min) && n < q.min)));
+        if (!badN && n !== null) v = n;
+        if (badN) invalid.push(q.key);
+        showRangeErr(i, badN && (s.left || s.bad || n === null || tooBig));
+      }
+      if (v !== null) profile[q.key] = v;
+      else if (q.required !== false && invalid.indexOf(q.key) < 0) missing.push(q.key);
+    });
+    profileValid = missing.length === 0 && invalid.length === 0;
+    var msg = [];
+    if (invalid.length) msg.push('入力を確認：' + invalid.join('・'));
+    if (missing.length) msg.push('未回答：' + missing.join('・'));
+    $('profileNote').textContent = msg.join('　');
+    updateNext();
+  }
+  function updateNext() {
+    var b = $('btnNext');
+    b.disabled = !(profileValid && imagesReady);
+    b.textContent = imagesReady ? '次へ進む（スタート）' : '画像を読み込み中…';
+  }
+  $('btnNext').addEventListener('click', function () {
+    if ($('btnNext').disabled) return;
+    if (document.activeElement) document.activeElement.blur();
+    startGame();
+  });
+
+  
+  var raceCv = $('raceCv'), rctx = raceCv.getContext('2d');
+  var fxCv = $('fxCv'), fctx = fxCv.getContext('2d');
+  var CW = 0, CH = 0, DPR = 1, VW = 0, VH = 0;
+  var COL = {};
+  function readColors() {
+    var cs = getComputedStyle(document.documentElement);
+    ['grass-a', 'grass-b', 'road', 'road-line', 'curb', 'me', 'cpu', 'tire', 'speed-rgb', 'ok', 'ng', 'muted'].forEach(function (k) {
+      COL[k] = cs.getPropertyValue('--' + k).trim();
+    });
+  }
+  readColors();
+  if (window.matchMedia) {
+    var mq = matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', readColors);
+  }
+  new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  function resizeAll() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+    var r = $('raceBox').getBoundingClientRect();
+    CW = r.width; CH = r.height;
+    raceCv.width = Math.max(1, Math.round(CW * DPR)); raceCv.height = Math.max(1, Math.round(CH * DPR));
+    raceCv.style.width = CW + 'px'; raceCv.style.height = CH + 'px';
+    VW = window.innerWidth; VH = window.innerHeight;
+    fxCv.width = Math.round(VW * DPR); fxCv.height = Math.round(VH * DPR);
+  }
+  window.addEventListener('resize', function () {
+    if (current === 'scrGame') resizeAll();
+    if (current === 'scrLook') sizeLook();
+  });
+
+  function hexToRgb(h) {
+    h = h.replace('#', ''); if (h.length === 3) h = h.replace(/./g, '$&$&');
+    var n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255];
+  }
+  function mix(hex, to, t) {
+    var a = hexToRgb(hex), b = to === 'w' ? [255, 255, 255] : [0, 0, 0];
+    return 'rgb(' + a.map(function (v, i) { return Math.round(v + (b[i] - v) * t); }).join(',') + ')';
+  }
+  function rr(g, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); g.fill();
+  }
+  function trap(g, cx, yb, wb, yt, wt) {
+    g.beginPath(); g.moveTo(cx - wb / 2, yb); g.lineTo(cx + wb / 2, yb); g.lineTo(cx + wt / 2, yt); g.lineTo(cx - wt / 2, yt); g.closePath(); g.fill();
+  }
+
+  var race = null;
+  function mkCar() { return { d: 0, boost: 0, slip: 0 }; }
+  function resetRace() { race = { t: 0, scroll: 0, lead: 0, me: mkCar(), cpu: mkCar(), pops: [], smoke: [], finish: null }; }
+
+  function impulse(sec) { var x = clamp(sec / CFG.timeLimit, 0, 1); return BOOST_MIN + (BOOST_MAX - BOOST_MIN) * Math.pow(1 - x, 1.3); }
+  function boostCar(c, amt) { c.boost += amt; }
+  function slipCar(c) { c.boost = Math.min(c.boost, 0) + SLIP; c.slip = 1.15; }
+  function pop(who, text, color) { race.pops.push({ who: who, text: text, color: color, life: 1 }); }
+
+  function stepRace(dt) {
+    race.t += dt;
+    [race.me, race.cpu].forEach(function (c) {
+      c.boost = Math.max(c.boost, -BASE_V * 0.85);
+      c.d += (BASE_V + c.boost) * dt;
+      c.boost *= Math.exp(-dt / TAU);
+      c.slip = Math.max(0, c.slip - dt);
+    });
+    var mean = BASE_V + (race.me.boost + race.cpu.boost) / 2;
+    race.scroll += mean / 5 * dt;
+    var target = Math.tanh((race.me.d - race.cpu.d) / LEAD_SCALE);
+    race.lead += (target - race.lead) * (1 - Math.exp(-dt * 3.5));
+    race.pops.forEach(function (p) { p.life -= dt / 1.1; });
+    race.pops = race.pops.filter(function (p) { return p.life > 0; });
+    race.smoke.forEach(function (s) { s.life -= dt / 0.7; s.y += 40 * dt; s.r += 18 * dt; });
+    race.smoke = race.smoke.filter(function (s) { return s.life > 0; });
+  }
+
+  
+  function drawRace(g, W, H, R) {
+    var yH = -H * 1.3, cx = W / 2, half0 = W * 0.40, ZN = 10, stepY = 2;
+    var y, k, wz;
+    var tex = VIS.course;
+    if (tex) {
+      
+      var tw0 = 2 * half0 / VIS.roadFrac;                          
+      var Lz = tw0 * (tex.height / tex.width) * ZN / (H - yH);     
+      for (y = 0; y < H; y += stepY) {
+        k = (y + stepY / 2 - yH) / (H - yH);
+        wz = ZN / k + R.scroll;
+        var row = Math.min(tex.height - 1, Math.max(0, Math.floor((1 - (wz % Lz) / Lz) * tex.height)));
+        var tw = tw0 * k, x0 = cx - tw / 2;
+        for (var x = x0 - Math.ceil(x0 / tw) * tw; x < W; x += tw) {
+          g.drawImage(tex, 0, row, tex.width, 1, x, y, tw + 0.5, stepY + 0.5);
+        }
+      }
+    } else {
+      
+      for (y = 0; y < H; y += stepY) {
+        k = (y + stepY / 2 - yH) / (H - yH);
+        wz = ZN / k + R.scroll;
+        g.fillStyle = Math.floor(wz / 1.6) % 2 === 0 ? COL['grass-a'] : COL['grass-b'];
+        g.fillRect(0, y, W, stepY + 0.5);
+        var hw = half0 * k, lw = Math.max(1.5, 5 * k), cw = Math.max(3, 11 * k);
+        g.fillStyle = Math.floor(wz / 0.8) % 2 === 0 ? COL['road-line'] : COL.curb;
+        g.fillRect(cx - hw - cw, y, cw, stepY + 0.5); g.fillRect(cx + hw, y, cw, stepY + 0.5);
+        g.fillStyle = COL.road; g.fillRect(cx - hw, y, hw * 2, stepY + 0.5);
+        g.fillStyle = COL['road-line'];
+        g.fillRect(cx - hw + lw * 0.8, y, lw, stepY + 0.5); g.fillRect(cx + hw - lw * 1.8, y, lw, stepY + 0.5);
+        if (wz % 2.2 < 1.1) g.fillRect(cx - lw / 2, y, lw, stepY + 0.5);
+      }
+    }
+
+    
+    var mid = H * 0.64, A = H * 0.26, yTop = mid - A, yBot = mid + A;
+    var kMid = (mid - yH) / (H - yH), off = half0 * kMid / 2;
+    var baseW = Math.min(half0 * 0.62, H * 0.42);
+    var cars = [
+      { who: 'me', c: R.me, x: cx + off, y: mid - A * R.lead, color: COL.me, label: 'YOU' },
+      { who: 'cpu', c: R.cpu, x: cx - off, y: mid + A * R.lead, color: COL.cpu, label: 'CPU' }
+    ];
+    var f = R.finish, leaderBaseY = 0;
+    if (f) {
+      var leader = cars[f.winner === 'me' ? 0 : 1];
+      leaderBaseY = leader.y;
+      var p2 = clamp((R.t - f.t0 - 1.0) / 0.9, 0, 1);
+      leader.y -= H * 0.16 * p2 * p2;
+    }
+    cars.forEach(function (o) { o.s = 0.6 + 0.5 * clamp((o.y - yTop) / (yBot - yTop), 0, 1); });
+
+    
+    if (f) {
+      var p = clamp((R.t - f.t0) / 1.0, 0, 1);
+      var e = 1 - Math.pow(1 - p, 3);
+      var gy = -12 + (leaderBaseY - 4 + 12) * e + Math.max(0, R.t - f.t0 - 1.0) * H * 0.12;
+      var kg = (gy - yH) / (H - yH), hwg = half0 * kg, bh = Math.max(6, 16 * kg), cols = 14, sq = hwg * 2 / cols;
+      for (var r2 = 0; r2 < 2; r2++) for (var cI = 0; cI < cols; cI++) {
+        g.fillStyle = (cI + r2) % 2 ? '#111' : '#fff';
+        g.fillRect(cx - hwg + cI * sq, gy - bh + r2 * bh / 2, sq + 0.5, bh / 2 + 0.5);
+      }
+    }
+
+    cars.sort(function (a, b) { return a.y - b.y; });
+    cars.forEach(function (o) { drawCar(g, o); });
+
+    
+    R.smoke.forEach(function (s) {
+      g.globalAlpha = 0.35 * s.life; g.fillStyle = '#cfd5de';
+      g.beginPath(); g.arc(s.x, s.y, s.r, 0, 7); g.fill();
+    });
+    g.globalAlpha = 1;
+
+    
+    R.pops.forEach(function (p) {
+      var o = cars[0].who === p.who ? cars[0] : cars[1];
+      var h = o.h || baseW * o.s * 0.74;
+      var py = o.y - h - 30 * o.s - (1 - p.life) * 26;
+      g.globalAlpha = clamp(p.life * 1.6, 0, 1);
+      g.font = '800 ' + Math.round(13 + 5 * o.s) + 'px "M PLUS Rounded 1c", "Hiragino Sans", sans-serif';
+      g.textAlign = 'center'; g.lineJoin = 'round'; g.lineWidth = 4; g.strokeStyle = 'rgba(0,0,0,.45)';
+      g.strokeText(p.text, o.x, py); g.fillStyle = p.color; g.fillText(p.text, o.x, py);
+    });
+    g.globalAlpha = 1;
+
+    function drawCar(g, o) {
+      var c = o.c, s = o.s, w = baseW * s, h = w * 0.74;
+      var spr = o.who === 'me' ? VIS.me : VIS.cpu;
+      var bodyW = w;
+      if (spr) {
+        
+        var sc = Math.min(w / spr.width, (w * 0.9) / spr.height);
+        bodyW = spr.width * sc; h = spr.height * sc;
+      }
+      var flameH = Math.min(h, w * 0.74);
+      o.h = h;
+      g.save(); g.translate(o.x, o.y);
+      if (c.slip > 0) g.rotate(Math.sin(R.t * 26) * 0.24 * Math.min(1, c.slip));
+      
+      g.fillStyle = 'rgba(0,0,0,.24)'; g.beginPath(); g.ellipse(0, -flameH * 0.03, bodyW * 0.56, flameH * 0.11, 0, 0, 7); g.fill();
+      
+      if (c.boost > 4) {
+        var L = flameH * (0.10 + 0.22 * Math.min(1, c.boost / 34)) * (0.8 + Math.random() * 0.4);
+        [-1, 1].forEach(function (sd) {
+          var fx = sd * bodyW * 0.22, fy = -flameH * 0.12;
+          g.fillStyle = '#FFB020'; g.beginPath(); g.moveTo(fx - w * 0.06, fy); g.lineTo(fx + w * 0.06, fy); g.lineTo(fx, fy + L); g.closePath(); g.fill();
+          g.fillStyle = '#FFF0B0'; g.beginPath(); g.moveTo(fx - w * 0.03, fy); g.lineTo(fx + w * 0.03, fy); g.lineTo(fx, fy + L * 0.55); g.closePath(); g.fill();
+        });
+      }
+      if (spr) {
+        g.drawImage(spr, -bodyW / 2, -h, bodyW, h);
+      } else {
+        drawDefaultCar(g, o, c, s, w, h);
+      }
+      
+      var fs = Math.round(9 + 4 * s);
+      g.font = '700 ' + fs + 'px "Chivo Mono", ui-monospace, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      var tw = g.measureText(o.label).width + 12;
+      g.fillStyle = o.color; rr(g, -tw / 2, -h - fs - 10 * s, tw, fs + 6, (fs + 6) / 2);
+      g.fillStyle = '#fff'; g.fillText(o.label, 0, -h - fs / 2 - 10 * s + 3);
+      g.textBaseline = 'alphabetic';
+      g.restore();
+      if (c.slip > 0.2 && Math.random() < 0.5) R.smoke.push({ x: o.x + (Math.random() - 0.5) * w, y: o.y - flameH * 0.1, r: 4 + 6 * s, life: 1 });
+    }
+
+    
+    function drawDefaultCar(g, o, c, s, w, h) {
+      
+      g.fillStyle = COL.tire;
+      rr(g, -w * 0.5, -h * 0.36, w * 0.18, h * 0.34, 4 * s); rr(g, w * 0.32, -h * 0.36, w * 0.18, h * 0.34, 4 * s);
+      
+      g.fillStyle = o.color; rr(g, -w * 0.46, -h * 0.64, w * 0.92, h * 0.52, 10 * s);
+      
+      g.fillStyle = mix(o.color, 'w', 0.18); trap(g, 0, -h * 0.6, w * 0.8, -h * 0.98, w * 0.58);
+      g.fillStyle = 'rgba(20,28,40,.82)'; trap(g, 0, -h * 0.63, w * 0.68, -h * 0.86, w * 0.54);
+      g.fillStyle = 'rgba(255,255,255,.28)'; trap(g, -w * 0.08, -h * 0.84, w * 0.12, -h * 0.66, w * 0.05);
+      
+      g.fillStyle = mix(o.color, 'b', 0.38); rr(g, -w * 0.42, -h * 0.5, w * 0.84, h * 0.15, 4 * s);
+      g.fillStyle = c.slip > 0 ? '#FF2A2A' : '#FFE29A';
+      rr(g, -w * 0.39, -h * 0.47, w * 0.17, h * 0.09, 3 * s); rr(g, w * 0.22, -h * 0.47, w * 0.17, h * 0.09, 3 * s);
+      
+      g.fillStyle = mix(o.color, 'b', 0.22); rr(g, -w * 0.47, -h * 0.22, w * 0.94, h * 0.1, 4 * s);
+      g.fillStyle = '#F8FAFC'; rr(g, -w * 0.1, -h * 0.33, w * 0.2, h * 0.1, 2 * s);
+    }
+  }
+
+  
+  var lookCv = $('lookCv'), lctx = lookCv.getContext('2d');
+  var lookRace = null, LW = 0, LH = 0;
+  var LOOK_NAMES = { me: '標準の車', cpu: '標準の車', course: '標準のコース' };
+  function sizeLook() {
+    var r = $('lookBox').getBoundingClientRect();
+    LW = r.width; LH = r.height;
+    lookCv.width = Math.max(1, Math.round(LW * DPR)); lookCv.height = Math.max(1, Math.round(LH * DPR));
+    lookCv.style.width = LW + 'px'; lookCv.style.height = LH + 'px';
+  }
+  function openLook() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+    lookRace = { t: 0, scroll: 0, lead: 0, me: mkCar(), cpu: mkCar(), pops: [], smoke: [], finish: null };
+    show('scrLook');
+    sizeLook();
+    ensureLoop();
+  }
+  function stepLook(dt) {
+    var R = lookRace;
+    R.t += dt;
+    R.scroll += 6 * dt;
+    R.lead = 0.75 * Math.sin(R.t * 0.7);              
+    R.me.boost = Math.cos(R.t * 0.7) > 0.3 ? 20 : 0;   
+  }
+  function updateLookUi() {
+    ['me', 'cpu', 'course'].forEach(function (slot) {
+      document.querySelector('.lk-reset[data-slot="' + slot + '"]').disabled = !VIS[slot];
+    });
+    $('fRoad').disabled = !VIS.course;
+    $('roadBox').classList.toggle('off', !VIS.course);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#scrLook input[type=file][data-slot]'), function (inp) {
+    inp.addEventListener('change', function () {
+      var slot = inp.getAttribute('data-slot'), file = inp.files && inp.files[0];
+      inp.value = '';
+      if (!file) return;
+      if (!/^image\//.test(file.type)) { $('lookNote').textContent = '画像ファイル（PNG・JPGなど）を選んでください'; return; }
+      var url = URL.createObjectURL(file);
+      loadSprite(url, slot === 'course' ? 640 : 480).then(function (cv) {
+        URL.revokeObjectURL(url);
+        if (!cv) { $('lookNote').textContent = file.name + ' を読み込めませんでした。別の画像で試してください'; return; }
+        VIS[slot] = cv;
+        $('lk-' + slot).textContent = file.name + '（' + cv.width + '×' + cv.height + '）';
+        $('lookNote').textContent = '';
+        updateLookUi();
+      });
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.lk-reset[data-slot]'), function (b) {
+    b.addEventListener('click', function () {
+      var slot = b.getAttribute('data-slot');
+      VIS[slot] = null; $('lk-' + slot).textContent = LOOK_NAMES[slot];
+      updateLookUi();
+    });
+  });
+  $('fRoad').addEventListener('input', function () {
+    VIS.roadFrac = parseInt($('fRoad').value, 10) / 100;
+    $('oRoad').textContent = $('fRoad').value + '%';
+  });
+  $('btnLook').addEventListener('click', openLook);
+  $('btnLookDone').addEventListener('click', function () { show('scrProfile'); });
+  $('btnLookTitle').addEventListener('click', function () { show('scrTitle'); });
+  
+  $('file-logo').addEventListener('change', function () {
+    var inp = $('file-logo'), file = inp.files && inp.files[0];
+    inp.value = '';
+    if (!file) return;
+    if (!/^image\//.test(file.type)) { $('lookNote').textContent = '画像ファイル（PNG・JPGなど）を選んでください'; return; }
+    var url = URL.createObjectURL(file), probe = new Image();
+    probe.onload = function () {
+      if (logoOverride) URL.revokeObjectURL(logoOverride);
+      logoOverride = url; renderLogo();
+      $('lk-logo').textContent = file.name + '（' + probe.naturalWidth + '×' + probe.naturalHeight + '）';
+      $('logoReset').disabled = false; $('lookNote').textContent = '';
+    };
+    probe.onerror = function () { URL.revokeObjectURL(url); $('lookNote').textContent = file.name + ' を読み込めませんでした。別の画像で試してください'; };
+    probe.src = url;
+  });
+  $('logoReset').addEventListener('click', function () {
+    if (logoOverride) URL.revokeObjectURL(logoOverride);
+    logoOverride = ''; renderLogo();
+    $('lk-logo').textContent = 'ゲーム名の文字'; $('logoReset').disabled = true;
+  });
+  if (!LIVE) $('btnLook').hidden = false;
+
+  
+  var fx = { I: 0, drawn: false };
+  function triggerFx(strength) { if (!reduceMotion) fx.I = Math.max(fx.I, clamp(strength, 0, 1)); }
+  function drawFx(dt) {
+    fx.I *= Math.exp(-dt / 0.33);
+    var g = fctx;
+    if (fx.I < 0.03) { if (fx.drawn) { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, fxCv.width, fxCv.height); fx.drawn = false; } return; }
+    g.setTransform(DPR, 0, 0, DPR, 0, 0); g.clearRect(0, 0, VW, VH);
+    var r = $('raceBox').getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height * 0.45;
+    var R = Math.hypot(VW, VH), r0 = Math.min(VW, VH) * 0.38;
+    g.fillStyle = 'rgba(' + COL['speed-rgb'] + ',' + (0.6 * fx.I).toFixed(3) + ')';
+    for (var i = 0; i < 70; i++) {
+      var a = Math.random() * Math.PI * 2, rin = r0 * (1 + Math.random() * 0.6), dw = (1.5 + Math.random() * 6) / R;
+      g.beginPath();
+      g.moveTo(cx + Math.cos(a) * rin, cy + Math.sin(a) * rin);
+      g.lineTo(cx + Math.cos(a - dw * 6) * R, cy + Math.sin(a - dw * 6) * R);
+      g.lineTo(cx + Math.cos(a + dw * 6) * R, cy + Math.sin(a + dw * 6) * R);
+      g.closePath(); g.fill();
+    }
+    fx.drawn = true;
+  }
+
+  
+  var phase = 'idle';   
+  var qi = -1, qStart = 0, raceStart = 0, results = [], cpuPlan = null, correctCount = 0;
+  var lastTs = 0, looping = false, startedAt = null, playId = null;
+
+  function loop(ts) {
+    var dt = lastTs ? Math.min(0.05, (ts - lastTs) / 1000) : 0;
+    lastTs = ts;
+    if (race && current === 'scrGame') {
+      stepRace(dt);
+      tickQuestion();
+      rctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      drawRace(rctx, CW, CH, race);
+      drawFx(dt);
+    } else if (lookRace && current === 'scrLook' && LW > 0) {
+      stepLook(dt);
+      lctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      drawRace(lctx, LW, LH, lookRace);
+    }
+    requestAnimationFrame(loop);
+  }
+  function ensureLoop() { if (!looping) { looping = true; requestAnimationFrame(loop); } }
+
+  function setButtons(on) { $('btnAI').disabled = !on; $('btnHU').disabled = !on; }
+
+  function startGame() {
+    resetRace();
+    results = []; qi = -1; correctCount = 0; cpuPlan = null;
+    playId = uuid(); startedAt = new Date().toISOString();
+    $('qTotal').textContent = N; $('qNo').textContent = 1; $('qScore').textContent = 0;
+    $('qImg').hidden = true; $('qBroken').hidden = true; $('qFb').hidden = true;
+    $('qWait').hidden = false; $('qWait').textContent = 'READY';
+    $('timerBar').style.transform = 'scaleX(1)'; $('timer').classList.remove('low');
+    setButtons(false);
+    show('scrGame');
+    ensureLoop();
+    phase = 'countdown';
+    var seq = ['3', '2', '1', 'GO!'], i = 0, cd = $('countdown');
+    cd.hidden = false;
+    (function tick() {
+      cd.innerHTML = '<span>' + seq[i] + '</span>';
+      if (++i < seq.length) { setTimeout(tick, 700); return; }
+      setTimeout(function () { cd.hidden = true; }, 450);
+      raceStart = performance.now();
+      nextQuestion();
+    })();
+  }
+
+  function nextQuestion() {
+    qi++;
+    if (qi >= N) { finishRace(); return; }
+    var q = QS[qi];
+    $('qNo').textContent = qi + 1;
+    $('qFb').hidden = true; $('qWait').hidden = true;
+    var img = $('qImg');
+    $('qBroken').hidden = !q.broken;
+    img.hidden = !!q.broken;
+    if (!q.broken) img.src = q.img;
+    $('timer').classList.remove('low'); $('timerBar').style.transform = 'scaleX(1)';
+    
+    var noAns = Math.random() < 0.08;
+    cpuPlan = { t: noAns ? null : 1.0 + Math.random() * 3.3, correct: Math.random() < CFG.cpuAccuracy, done: false };
+    requestAnimationFrame(function () {
+      qStart = performance.now();
+      phase = 'question';
+      setButtons(true);
+    });
+  }
+
+  function applyCpu(timeoutNow) {
+    if (!cpuPlan || cpuPlan.done) return;
+    cpuPlan.done = true;
+    if (cpuPlan.t === null || timeoutNow) { slipCar(race.cpu); pop('cpu', 'SLIP', COL.ng); }
+    else if (cpuPlan.correct) { boostCar(race.cpu, impulse(cpuPlan.t)); pop('cpu', 'BOOST', '#fff'); }
+    else { pop('cpu', 'MISS', '#e5e7eb'); }
+  }
+
+  function tickQuestion() {
+    if (phase !== 'question') return;
+    var el = (performance.now() - qStart) / 1000;
+    var remain = Math.max(0, 1 - el / CFG.timeLimit);
+    $('timerBar').style.transform = 'scaleX(' + remain.toFixed(4) + ')';
+    if (el > CFG.timeLimit - 1.5) $('timer').classList.add('low');
+    if (cpuPlan && !cpuPlan.done && cpuPlan.t !== null && el >= cpuPlan.t) applyCpu(false);
+    if (el >= CFG.timeLimit) answer(null);
+  }
+
+  function answer(ans) {
+    if (phase !== 'question') return;
+    phase = 'gap';
+    setButtons(false);
+    var q = QS[qi];
+    var timedOut = ans === null;
+    var sec = timedOut ? CFG.timeLimit : Math.min(CFG.timeLimit, (performance.now() - qStart) / 1000);
+    var ok = !timedOut && ans === q.answer;
+    results.push({ i: qi + 1, qid: q.id, img: q.img, answer: q.answer, user: ans, timeMs: Math.round(sec * 1000), correct: ok, timedOut: timedOut });
+
+    var fb = $('qFb');
+    if (ok) {
+      correctCount++; $('qScore').textContent = correctCount;
+      var amt = impulse(sec);
+      boostCar(race.me, amt);
+      triggerFx(0.45 + 0.55 * (amt - BOOST_MIN) / (BOOST_MAX - BOOST_MIN));
+      pop('me', sec < 1.5 ? 'TURBO!' : 'BOOST!', '#FFE29A');
+      fb.innerHTML = '<span class="ok">○</span>';
+      vibrate(18);
+    } else if (timedOut) {
+      slipCar(race.me);
+      pop('me', 'SLIP!', '#fff');
+      fb.innerHTML = '<span class="slip">時間<br>切れ</span>';
+      vibrate([40, 40, 40]);
+    } else {
+      pop('me', 'MISS', '#fff');
+      fb.innerHTML = '<span class="ng">×</span>';
+      vibrate(30);
+    }
+    fb.hidden = false;
+    
+    if (cpuPlan && !cpuPlan.done) {
+      var el = (performance.now() - qStart) / 1000;
+      applyCpu(cpuPlan.t === null && el >= CFG.timeLimit);
+    }
+    setTimeout(nextQuestion, timedOut ? FEEDBACK_MS + 200 : FEEDBACK_MS);
+  }
+  function vibrate(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+
+  function onAnswerPress(e) {
+    var b = e.currentTarget;
+    if (b.disabled) return;
+    if (e.type === 'click' && e.detail !== 0) return; 
+    e.preventDefault();
+    b.classList.add('hit'); setTimeout(function () { b.classList.remove('hit'); }, 120);
+    answer(b.getAttribute('data-a'));
+  }
+  ['btnAI', 'btnHU'].forEach(function (id) {
+    $(id).addEventListener('pointerdown', onAnswerPress);
+    $(id).addEventListener('click', onAnswerPress);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (phase !== 'question') return;
+    if (e.key === 'ArrowLeft' || e.key === 'a') answer('AI');
+    if (e.key === 'ArrowRight' || e.key === 'h') answer('HUMAN');
+  });
+
+  function finishRace() {
+    phase = 'finish';
+    var clearMs = Math.round(performance.now() - raceStart);
+    var win = race.me.d >= race.cpu.d;
+    race.finish = { t0: race.t, winner: win ? 'me' : 'cpu' };
+    boostCar(win ? race.me : race.cpu, 30);
+    if (win) triggerFx(0.8);
+    $('qWait').hidden = false; $('qWait').textContent = 'FINISH'; $('timerBar').style.transform = 'scaleX(0)'; $('qImg').hidden = true; $('qBroken').hidden = true; $('qFb').hidden = true;
+    setTimeout(function () {
+      var cd = $('countdown'); cd.hidden = false;
+      cd.innerHTML = '<span class="goal" style="color:' + (win ? COL.me : COL.cpu) + '">GOAL!</span>';
+    }, 1000);
+    var totalMs = results.reduce(function (s, r) { return s + r.timeMs; }, 0);
+    var res = {
+      playId: playId, gameId: GAME_ID, at: new Date().toISOString(), startedAt: startedAt,
+      win: win, clearTimeMs: clearMs, correct: correctCount, total: N,
+      totalAnswerMs: totalMs, avgMs: N ? Math.round(totalMs / N) : 0,
+      myDist: Math.round(race.me.d), cpuDist: Math.round(race.cpu.d),
+      profile: Object.assign({}, profile), answers: results.slice()
+    };
+    setTimeout(function () {
+      $('countdown').hidden = true;
+      phase = 'done';
+      renderResult(res, true);
+      show('scrResult');
+      var rec = willRecord();
+      playCount++;
+      if (TEST) setSend('test');
+      else if (!LIVE) setSend(playCount > 1 ? 'replay-demo' : 'demo');
+      else if (rec) submit(res, false);
+      else if (unsent) submit(unsent, true);   
+      else setSend('replay');
+    }, 2600);
+  }
+
+  
+  function label(a) { return a === 'AI' ? 'AI' : a === 'HUMAN' ? '人間' : '未回答'; }
+  function fmtSec(ms) { return (ms / 1000).toFixed(2); }
+  function fmtClock(ms) {
+    var s = ms / 1000; if (s < 60) return s.toFixed(2) + '<small>秒</small>';
+    var m = Math.floor(s / 60); var r = s - m * 60; return m + ':' + (r < 10 ? '0' : '') + r.toFixed(2);
+  }
+  function renderResult(res, fresh) {
+    if (!res) return;
+    var big = $('resBig');
+    big.textContent = res.win ? 'WIN!' : 'LOSE…';
+    big.className = 'res-big ' + (res.win ? 'win' : 'lose');
+    $('resSub').textContent = res.win ? 'CPUに勝ちました！' : 'CPUに負けてしまいました';
+    $('stTime').innerHTML = fmtClock(res.clearTimeMs);
+    $('stOk').innerHTML = res.correct + '<small>/' + res.total + '</small>';
+    $('stAvg').innerHTML = fmtSec(res.avgMs) + '<small>秒</small>';
+    $('review').innerHTML = res.answers.map(function (a) {
+      var mark = a.timedOut ? '<span class="mark slip">時間切れ</span>' : a.correct ? '<span class="mark ok">○</span>' : '<span class="mark ng">×</span>';
+      var thumb = a.img ? '<button class="thumb" type="button" data-img="' + esc(a.img) + '" aria-label="Q' + a.i + 'の画像を拡大"><img src="' + esc(a.img) + '" alt="" referrerpolicy="no-referrer" loading="lazy"></button>' : '<span class="thumb"></span>';
+      return '<li>' + thumb +
+        '<div class="rv-main"><span class="qn">Q' + a.i + '</span>' +
+        '<span class="ln">正解 <b>' + label(a.answer) + '</b></span>' +
+        '<span class="ln">あなた <b>' + label(a.user) + '</b></span></div>' +
+        '<div class="rv-side">' + mark + '<span class="t">' + fmtSec(a.timeMs) + 's</span></div></li>';
+    }).join('');
+    $('resActions').hidden = false;
+    if (!fresh) $('sendStatus').hidden = true;
+  }
+  $('review').addEventListener('click', function (e) {
+    var t = e.target.closest('.thumb[data-img]'); if (!t) return;
+    $('lbImg').src = t.getAttribute('data-img'); $('lightbox').hidden = false;
+  });
+  $('lightbox').addEventListener('click', function () { $('lightbox').hidden = true; });
+
+  function setSend(state, retry) {
+    var el = $('sendStatus'); el.hidden = false; el.className = 'send';
+    if (state === 'sending') el.innerHTML = '<span>結果を送信しています…</span>';
+    if (state === 'ok') { el.classList.add('ok'); el.innerHTML = '<span>結果を送信しました。ご協力ありがとうございます！</span>'; }
+    if (state === 'dup') { el.innerHTML = '<span>この端末からはすでに回答済みのため、今回の結果は記録されませんでした。</span>'; }
+    if (state === 'demo') { el.innerHTML = '<span>デモ版のため、結果は送信されません。</span>'; }
+    if (state === 'test') { el.innerHTML = '<span>テストモードのため、結果は記録されません。</span>'; }
+    if (state === 'replay') { el.innerHTML = '<span>2回目以降のプレイのため、結果は記録されません。</span>'; }
+    if (state === 'replay-demo') { el.innerHTML = '<span>デモ版のため、結果は送信されません。</span>'; }
+    if (state === 'late-ok') { el.classList.add('ok'); el.innerHTML = '<span>前回送信できなかった初回の結果を送信しました。今回の結果は記録されません。</span>'; }
+    if (state === 'err') {
+      el.classList.add('err'); el.innerHTML = '<span>送信できませんでした。電波の良い場所で再送してください。</span><button type="button" id="btnResend">再送</button>';
+      $('btnResend').onclick = retry;
+    }
+  }
+
+  function submit(res, late) {
+    attempted = true;
+    setSend('sending');
+    var payload = {
+      key: BOOT.key || '', token: BOOT.token || '', gameId: GAME_ID, deviceId: deviceId, playId: res.playId,
+      startedAt: res.startedAt, ua: (navigator.userAgent || '').slice(0, 300),
+      profile: res.profile,
+      result: { win: res.win, clearTimeMs: res.clearTimeMs, correctCount: res.correct, total: res.total, totalAnswerMs: res.totalAnswerMs, myDist: res.myDist, cpuDist: res.cpuDist },
+      answers: res.answers.map(function (a) { return { i: a.i, qid: a.qid, user: a.user, timeMs: a.timeMs, timedOut: a.timedOut }; })
+    };
+    callServer('submitResult', payload).then(function (r) {
+      if (r && r.ok) { unsent = null; setSend(late ? 'late-ok' : 'ok'); markDone(res); }
+      else if (r && r.reason === 'duplicate') { unsent = null; if (CFG.onePlay) setPlayed(null); setSend(late ? 'replay' : 'dup'); }
+      else { unsent = res; setSend('err', function () { submit(res, late); }); }
+    }, function () { unsent = res; setSend('err', function () { submit(res, late); }); });
+  }
+  function markDone(res) {
+    if (!CFG.onePlay) return;
+    played = true;
+    var lite = Object.assign({}, res, { answers: res.answers.map(function (a) { var b = Object.assign({}, a); if (b.img && b.img.indexOf('data:') === 0) b.img = ''; return b; }) });
+    store.set(DONE_KEY, JSON.stringify(lite));
+    prevResult = lite;
+    setPlayedUi();
+  }
+
+  
+  $('btnRetry').addEventListener('click', function () {
+    var b = $('btnRetry');
+    b.disabled = true; b.textContent = '画像を読み込み中…';
+    prepareSet(randomSet()).then(function () { b.disabled = false; b.textContent = 'もう一度あそぶ'; startGame(); });
+  });
+
+  
+  $('btnStart').disabled = false; $('btnStart').textContent = 'はじめる';
+  renderSurvey();
+  prepareSet(initTitle());
+  updateNext();
+  validate();
+  } 
+})();
+</script>
